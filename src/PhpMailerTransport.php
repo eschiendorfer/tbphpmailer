@@ -28,10 +28,16 @@ use PHPMailer\PHPMailer\PHPMailer;
 use TbPhpMailer;
 use Thirtybees\Core\Mail\MailAddress;
 use Thirtybees\Core\Mail\MailTransport;
+use Thirtybees\Core\Mail\EnvelopeFromSupport;
 use Translate;
 
-class PhpMailerTransport implements MailTransport
+class PhpMailerTransport implements MailTransport, EnvelopeFromSupport
 {
+    /**
+     * @var string|null
+     */
+    protected $envelopeFrom = null;
+
     /**
      * @return string
      */
@@ -48,6 +54,15 @@ class PhpMailerTransport implements MailTransport
     public function l(string $string): string
     {
         return Translate::getModuleTranslation('tbphpmailer', $string, 'PhpMailerTransport');
+    }
+
+    /**
+     * @param string $email
+     * @return void
+     */
+    public function setEnvelopeFrom(string $email)
+    {
+        $this->envelopeFrom = $email;
     }
 
     /**
@@ -120,6 +135,9 @@ class PhpMailerTransport implements MailTransport
         $message->SMTPOptions = $SMTPOptions;
         $message->Port = $this->getIntConfig(TbPhpMailer::CONFIG_MAIL_SMTP_PORT, $idShop);
         $message->setFrom($fromAddress->getAddress(), $fromAddress->getName());
+        if ($this->envelopeFrom) {
+            $message->Sender = $this->envelopeFrom;
+        }
         $message->Subject = $subject;
         $message->addReplyTo($replyTo->getAddress(), $replyTo->getName());
         foreach ($toAddresses as $toAddress) {
